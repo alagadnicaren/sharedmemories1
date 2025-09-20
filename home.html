@@ -1,0 +1,803 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.0/firebase-firestore-compat.js"></script>
+  <script>
+    const firebaseConfig = {
+      apiKey: "AIzaSyD2FTXVIIWck-xGHQUpsswvECy2Yz8qouw",
+      authDomain: "sharedmemories-62823.firebaseapp.com",
+      projectId: "sharedmemories-62823",
+      storageBucket: "sharedmemories-62823.firebasestorage.app",
+      messagingSenderId: "462435050797",
+      appId: "1:462435050797:web:ebb9e855894f71c8c9dfa4",
+      measurementId: "G-FHZ5W6NJCW"
+    };
+
+    const app = firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+    window.db = db;
+  </script>
+  <title>Home</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #d4ba9f;
+      color: #754c21;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+    }
+
+    /* Huge box container (letter placeholder) */
+    .letter-box {
+      width: 80%;
+      max-width: 900px;
+      background: #fff;
+      border: 3px solid #754c21;
+      border-radius: 16px;
+      margin: 40px 0 20px;
+      padding: 40px;
+      box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+      min-height: 2000px; /* big enough for scrolling */
+    }
+
+    /* Bottom buttons */
+    .actions {
+      display: flex;
+      gap: 20px;
+      margin-bottom: 40px;
+    }
+
+    .actions button {
+      padding: 12px 20px;
+      background-color: #754c21;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .actions button:hover {
+      background-color: #5d3c19;
+    }
+
+    /* Popup */
+    .popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 10;
+    }
+
+    .popup.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .popup-box {
+      background: #fff;
+      border: 3px solid #754c21;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+    }
+
+    .popup-box h2 {
+      margin-bottom: 20px;
+    }
+
+    .popup-box .popup-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+    }
+
+    .popup-box button {
+      padding: 12px 20px;
+      background-color: #754c21;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .popup-box button:hover {
+      background-color: #5d3c19;
+    }
+
+    /* Add note button */
+    .add-note-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 16px;
+      background-color: #754c21;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-bottom: 20px;
+      transition: background 0.3s ease;
+    }
+
+    .add-note-btn:hover {
+      background-color: #5d3c19;
+    }
+
+    /* Notes container */
+    .notes-container {
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+
+    .note {
+      background: #f9f9f9;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      padding: 16px;
+      position: relative;
+    }
+
+    .note-sender {
+      font-weight: bold;
+      margin-bottom: 8px;
+      color: #754c21;
+    }
+
+    .note-content {
+      margin-bottom: 8px;
+    }
+
+    .note-timestamp {
+      font-size: 12px;
+      color: #666;
+    }
+
+    .note-expiry {
+      font-size: 12px;
+      color: #999;
+    }
+
+    /* Note input popup */
+    .note-popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 10;
+    }
+
+    .note-popup.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .note-popup-box {
+      background: #fff;
+      border: 3px solid #754c21;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      max-width: 500px;
+      width: 90%;
+    }
+
+    .note-popup-box h2 {
+      margin-bottom: 20px;
+    }
+
+    .note-popup-box input[type="text"] {
+      width: 100%;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
+    }
+
+    .note-popup-box textarea {
+      width: 100%;
+      height: 120px;
+      padding: 12px;
+      border: 1px solid #ddd;
+      border-radius: 8px;
+      resize: vertical;
+      font-family: Arial, sans-serif;
+      margin-bottom: 10px;
+    }
+
+    #wordCount {
+      text-align: right;
+      font-size: 12px;
+      color: #666;
+      margin-bottom: 20px;
+    }
+
+    .note-popup-box .note-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .note-popup-box button {
+      padding: 12px 20px;
+      background-color: #754c21;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .note-popup-box button:hover {
+      background-color: #5d3c19;
+    }
+
+    /* Delete popup */
+    .delete-popup {
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s ease, visibility 0.3s ease;
+      z-index: 10;
+    }
+
+    .delete-popup.show {
+      visibility: visible;
+      opacity: 1;
+    }
+
+    .delete-popup-box {
+      background: #fff;
+      border: 3px solid #754c21;
+      border-radius: 16px;
+      padding: 40px;
+      text-align: center;
+      box-shadow: 0 8px 20px rgba(0,0,0,0.4);
+      max-width: 400px;
+      width: 90%;
+    }
+
+    .delete-popup-box h2 {
+      margin-bottom: 10px;
+    }
+
+    .delete-popup-box p {
+      margin-bottom: 20px;
+    }
+
+    .delete-actions {
+      display: flex;
+      gap: 10px;
+      justify-content: center;
+    }
+
+    .delete-actions button {
+      padding: 12px 20px;
+      background-color: #754c21;
+      color: #fff;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      transition: background 0.3s ease;
+    }
+
+    .delete-actions button:hover {
+      background-color: #5d3c19;
+    }
+
+    .delete-actions button:first-child {
+      background-color: #d9534f;
+    }
+
+    .delete-actions button:first-child:hover {
+      background-color: #c9302c;
+    }
+
+    /* Universal Back Button styles (brown theme) */
+    .back-btn {
+      position: fixed;
+      top: 20px;
+      left: 20px;
+      background: #754c21;
+      color: #fff;
+      padding: 12px 18px;
+      border-radius: 8px;
+      text-decoration: none;
+      font-weight: 700;
+      font-size: 17px;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+      transition: background 0.18s ease, transform 0.12s ease;
+      z-index: 2147483647; /* very high so it stays on top */
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* hover/tap effect */
+    .back-btn:hover {
+      background: #5a3818;
+      transform: translateY(-3px);
+    }
+
+    /* circular variant: add class "round" */
+    .back-btn.round {
+      width: 48px;
+      height: 48px;
+      padding: 0;
+      border-radius: 50%;
+      font-size: 22px;
+    }
+
+    /* optional smaller mobile sizing */
+    @media (max-width: 480px) {
+      .back-btn { top: 14px; left: 12px; padding: 16px 24px; font-size: 20px; }
+      .back-btn.round { width: 52px; height: 52px; font-size: 24px; }
+    }
+
+  </style>
+</head>
+<body>
+
+  <!-- Notes container -->
+  <div class="letter-box">
+    <h1>Your Notes</h1>
+    <button id="addNoteBtn" class="add-note-btn">
+      <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="currentColor" viewBox="0 0 24 24">
+        <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm5 11h-4v4h-2v-4H7v-2h4V7h2v4h4v2z"/>
+      </svg>
+      Add Note
+    </button>
+    <div id="notesContainer" class="notes-container"></div>
+  </div>
+
+  <!-- Buttons below the box -->
+<div class="actions">
+  <button onclick="location.href='album.html'">View album</button>
+  <button onclick="location.href='music.html'">Listen to music</button>
+  <button onclick="location.href='timer.html'">Check timer</button>
+</div>
+
+  <!-- Popup -->
+  <div class="popup" id="popup">
+    <div class="popup-box">
+      <h2>What would you like to do?</h2>
+      <div class="popup-actions">
+        <button onclick="location.href='album.html'">View album</button>
+        <button onclick="location.href='music.html'">Listen to music</button>
+        <button onclick="location.href='timer.html'">Check timer</button>
+        <button onclick="closePopup()">Stay for now</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note input popup -->
+  <div class="note-popup" id="notePopup">
+    <div class="note-popup-box">
+      <h2>Add a Note</h2>
+      <input type="text" id="noteSender" placeholder="From (optional)">
+      <textarea id="noteInput" placeholder="Type your note here... (max 200 words)"></textarea>
+      <div id="wordCount">0/200</div>
+      <div class="note-actions">
+        <button onclick="addNote()">Add Note</button>
+        <button onclick="closeNotePopup()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Note delete popup -->
+  <div class="delete-popup" id="deletePopup">
+    <div class="delete-popup-box">
+      <h2>Delete Note?</h2>
+      <p>Are you sure you want to delete this note?</p>
+      <div class="delete-actions">
+        <button onclick="confirmDelete()">Delete</button>
+        <button onclick="cancelDelete()">Cancel</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+  // Check login
+  let currentUser = localStorage.getItem('currentUser');
+  let userPassword = localStorage.getItem('userPassword');
+
+  function showLoginPopup() {
+    const loginPopup = document.createElement('div');
+    loginPopup.id = 'loginPopup';
+    loginPopup.style.cssText = `
+      position: fixed;
+      top: 0; left: 0;
+      width: 100%; height: 100%;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      z-index: 10000;
+    `;
+
+    loginPopup.innerHTML = `
+      <div style="
+        background: #fff;
+        border: 2px solid #754c21;
+        border-radius: 12px;
+        padding: 40px;
+        text-align: center;
+        box-shadow: 0 6px 16px rgba(0,0,0,0.3);
+        max-width: 400px;
+        width: 90%;
+      ">
+        <h2 style="color: #754c21; margin-bottom: 20px;">Login</h2>
+        <form id="loginForm">
+          <input type="text" id="loginUsername" placeholder="Username" required style="
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #754c21;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 15px;
+            text-align: center;
+            color: #754c21;
+            background: #fdf8f4;
+          ">
+          <input type="password" id="loginPassword" placeholder="Password" required style="
+            width: 100%;
+            padding: 12px;
+            border: 2px solid #754c21;
+            border-radius: 8px;
+            font-size: 16px;
+            margin-bottom: 20px;
+            text-align: center;
+            color: #754c21;
+            background: #fdf8f4;
+          ">
+          <button type="submit" style="
+            background: #754c21;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            margin-right: 10px;
+          ">Login</button>
+          <button type="button" id="registerBtn" style="
+            background: #a87340;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+          ">Register</button>
+        </form>
+        <div id="loginError" style="color: #d9534f; margin-top: 15px;"></div>
+      </div>
+    `;
+
+    document.body.appendChild(loginPopup);
+
+    // Handle login
+    document.getElementById('loginForm').addEventListener('submit', function(e) {
+      e.preventDefault();
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      const storedPassword = localStorage.getItem(`password_${username}`);
+
+      if (storedPassword && storedPassword === password) {
+        currentUser = username;
+        userPassword = password;
+        localStorage.setItem('currentUser', username);
+        localStorage.setItem('userPassword', password);
+        localStorage.setItem('userData', JSON.stringify({
+          username: username,
+          loginTime: new Date().toISOString(),
+          albums: [],
+          music: []
+        }));
+        document.body.removeChild(loginPopup);
+        initUserInterface();
+      } else {
+        document.getElementById('loginError').textContent = 'Invalid username or password';
+      }
+    });
+
+    // Handle register
+    document.getElementById('registerBtn').addEventListener('click', function() {
+      const username = document.getElementById('loginUsername').value.trim();
+      const password = document.getElementById('loginPassword').value;
+
+      if (username.length < 3) {
+        document.getElementById('loginError').textContent = 'Username must be at least 3 characters';
+        return;
+      }
+
+      if (password.length < 6) {
+        document.getElementById('loginError').textContent = 'Password must be at least 6 characters';
+        return;
+      }
+
+      if (!/^[a-zA-Z0-9_]+$/.test(username)) {
+        document.getElementById('loginError').textContent = 'Username can only contain letters, numbers, and underscores';
+        return;
+      }
+
+      if (localStorage.getItem(`password_${username}`)) {
+        document.getElementById('loginError').textContent = 'Username already exists';
+        return;
+      }
+
+      localStorage.setItem(`password_${username}`, password);
+      document.getElementById('loginError').textContent = 'Registration successful! Please login.';
+    });
+  }
+
+  function initUserInterface() {
+    // Add logout button
+    const logoutBtn = document.createElement('a');
+    logoutBtn.href = '#';
+    logoutBtn.className = 'back-btn';
+    logoutBtn.style.top = '20px';
+    logoutBtn.style.right = '20px';
+    logoutBtn.style.left = 'auto';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.onclick = function() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userPassword');
+      location.reload();
+    };
+    document.body.appendChild(logoutBtn);
+
+    // Display username
+    const userDisplay = document.createElement('div');
+    userDisplay.style.position = 'fixed';
+    userDisplay.style.top = '20px';
+    userDisplay.style.left = '100px';
+    userDisplay.style.color = '#754c21';
+    userDisplay.style.fontWeight = 'bold';
+    userDisplay.style.fontSize = '18px';
+    userDisplay.textContent = `Welcome, ${currentUser}!`;
+    document.body.appendChild(userDisplay);
+  }
+
+  // Show login popup if not logged in
+  if (!currentUser) {
+    showLoginPopup();
+  } else {
+    initUserInterface();
+  }
+
+  const popup = document.getElementById("popup");
+  let popupShown = false; // prevent multiple triggers
+
+  // Show popup when user scrolls to bottom
+  window.addEventListener("scroll", () => {
+    const scrollTop = window.scrollY || document.documentElement.scrollTop;
+    const windowHeight = window.innerHeight;
+    const fullHeight = document.documentElement.scrollHeight;
+
+    if (!popupShown && scrollTop + windowHeight >= fullHeight - 10) {
+      popup.classList.add("show");
+      popupShown = true;
+    }
+  });
+
+  // Close popup when "Stay for now" is clicked
+  function closePopup() {
+    popup.classList.remove("show");
+  }
+
+  // Notes functionality
+  const addNoteBtn = document.getElementById("addNoteBtn");
+  const notePopup = document.getElementById("notePopup");
+  const noteInput = document.getElementById("noteInput");
+  const deletePopup = document.getElementById("deletePopup");
+  const notesContainer = document.getElementById("notesContainer");
+  let notes = [];
+  let deletingNote = null;
+
+  // Real-time listener for notes
+  window.db.collection("notes").onSnapshot((querySnapshot) => {
+    notes = [];
+    querySnapshot.forEach((doc) => {
+      notes.push({ id: doc.id, ...doc.data() });
+    });
+    renderNotes();
+  });
+
+  // Show note popup
+  addNoteBtn.addEventListener("click", () => {
+    notePopup.classList.add("show");
+    noteInput.focus();
+    updateWordCount();
+  });
+
+  // Close note popup
+  function closeNotePopup() {
+    notePopup.classList.remove("show");
+    noteSender.value = "";
+    noteInput.value = "";
+    updateWordCount();
+  }
+
+  // Update word count
+  function updateWordCount() {
+    const text = noteInput.value.trim();
+    const words = text ? text.split(/\s+/).length : 0;
+    document.getElementById("wordCount").textContent = `${words}/200`;
+  }
+
+  // Update word count on input
+  noteInput.addEventListener("input", updateWordCount);
+
+  // Add note on enter key
+  noteInput.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      addNote();
+    }
+  });
+
+  // Add note function
+  function addNote() {
+    const content = noteInput.value.trim();
+    const sender = noteSender.value.trim();
+    const words = content ? content.split(/\s+/).length : 0;
+    if (content && words <= 200) {
+      const now = new Date();
+      const expiry = new Date(now.getTime() + 3 * 24 * 60 * 60 * 1000); // 3 days
+      const note = {
+        sender: sender || "Anonymous",
+        content,
+        timestamp: now.toLocaleString(),
+        expiry: expiry.getTime()
+      };
+      window.db.collection("notes").add(note).then(() => {
+        closeNotePopup();
+      });
+    } else if (words > 200) {
+      alert("Note cannot exceed 200 words.");
+    }
+  }
+
+
+  // Render notes
+  function renderNotes() {
+    notesContainer.innerHTML = "";
+    notes.forEach(note => {
+      const noteEl = document.createElement("div");
+      noteEl.className = "note";
+      noteEl.dataset.id = note.id;
+      noteEl.innerHTML = `
+        <div class="note-sender">From: ${note.sender}</div>
+        <div class="note-content">${note.content.replace(/\n/g, "<br>")}</div>
+        <div class="note-timestamp">${note.timestamp}</div>
+        <div class="note-expiry" data-expiry="${note.expiry}">Expires in: calculating...</div>
+      `;
+
+      // Left click to delete
+      noteEl.addEventListener("click", (e) => {
+        openDeletePopup(note);
+      });
+
+      // Long press to delete (for mobile)
+      let longPressTimer;
+      noteEl.addEventListener("touchstart", (e) => {
+        longPressTimer = setTimeout(() => {
+          openDeletePopup(note);
+        }, 1000); // 1 second long press
+      });
+      noteEl.addEventListener("touchend", () => {
+        clearTimeout(longPressTimer);
+      });
+      noteEl.addEventListener("touchmove", () => {
+        clearTimeout(longPressTimer);
+      });
+      notesContainer.appendChild(noteEl);
+    });
+  }
+
+  // Update expiry countdowns
+  function updateCountdowns() {
+    const now = Date.now();
+    document.querySelectorAll(".note-expiry").forEach(el => {
+      const expiry = parseInt(el.dataset.expiry);
+      const remaining = expiry - now;
+      if (remaining <= 0) {
+        // Remove expired note
+        const noteId = el.closest('.note').dataset.id;
+        window.db.collection("notes").doc(noteId).delete();
+      } else {
+        const days = Math.floor(remaining / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((remaining % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((remaining % (1000 * 60 * 60)) / (1000 * 60));
+        el.textContent = `Expires in: ${days}d ${hours}h ${minutes}m`;
+      }
+    });
+  }
+
+  // Open delete popup
+  function openDeletePopup(note) {
+    deletingNote = note;
+    deletePopup.classList.add("show");
+  }
+
+  // Confirm delete
+  function confirmDelete() {
+    if (deletingNote) {
+      window.db.collection("notes").doc(deletingNote.id).delete().then(() => {
+        cancelDelete();
+      });
+    }
+  }
+
+  // Cancel delete
+  function cancelDelete() {
+    deletePopup.classList.remove("show");
+    deletingNote = null;
+  }
+
+  // Initial render and countdown update
+  renderNotes();
+  updateCountdowns();
+  setInterval(updateCountdowns, 60000); // Update every minute
+</script>
+
+<!-- 🌍 Global Audio Player -->
+<div id="globalPlayer" style="position:fixed;bottom:0;left:0;right:0;background:#f1e0d0;color:#754c21;padding:10px;display:flex;align-items:center;z-index:9999;border-top:2px solid #754c21;">
+  <button id="prevBtn" style="background:#754c21;color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 5px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M6 19V5h2v14H6zm3.5-7L20 19V5l-10.5 7z"/></svg>
+  </button>
+  <button id="playPauseBtn" style="background:#754c21;color:#fff;border:none;border-radius:50%;width:50px;height:50px;display:flex;align-items:center;justify-content:center;margin:0 5px;position:relative;">
+    <svg id="playIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+    <svg id="pauseIcon" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="white" viewBox="0 0 24 24" style="display:none;"><path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/></svg>
+  </button>
+  <button id="nextBtn" style="background:#754c21;color:#fff;border:none;border-radius:50%;width:40px;height:40px;display:flex;align-items:center;justify-content:center;margin:0 5px;">
+    <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" fill="white" viewBox="0 0 24 24"><path d="M18 5v14h-2V5h2zM5 19l10.5-7L5 5v14z"/></svg>
+  </button>
+  <span id="nowPlaying" style="margin-left:10px;flex:1;">No song</span>
+  <input type="range" id="progress" value="0" min="0" step="1" style="flex:1;margin:0 10px;accent-color:#754c21;">
+</div>
+
+<!-- The real <audio> element -->
+<audio id="audio"></audio>
+
+<script src="js/main.js"></script>
+
+<script src="js/router.js"></script>
+
+</body>
+</html>

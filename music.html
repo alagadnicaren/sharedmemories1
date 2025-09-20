@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Music</title>
+    <link rel="stylesheet" href="css/style.css">
+    <style>
+        /* Universal Back Button styles (brown theme) */
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #754c21;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 17px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+  transition: background 0.18s ease, transform 0.12s ease;
+  z-index: 2147483647; /* very high so it stays on top */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* hover/tap effect */
+.back-btn:hover {
+  background: #5a3818;
+  transform: translateY(-3px);
+}
+
+/* circular variant: add class "round" */
+.back-btn.round {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 22px;
+}
+
+/* optional smaller mobile sizing */
+@media (max-width: 480px) {
+  .back-btn { top: 14px; left: 12px; padding: 16px 24px; font-size: 20px; }
+  .back-btn.round { width: 52px; height: 52px; font-size: 24px; }
+}
+
+        /* Music specific styles */
+        .music-container {
+            max-width: 800px;
+            width: 100%;
+            padding: 20px;
+            background: #fff;
+            border: 2px solid #754c21;
+            border-radius: 12px;
+            box-shadow: 0 6px 16px rgba(0,0,0,0.25);
+            margin: 20px auto;
+            position: relative;
+        }
+
+        .music-header {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .music-header h1 {
+            color: #754c21;
+            font-size: 28px;
+        }
+
+        .playlist {
+            list-style: none;
+            padding: 0;
+        }
+
+        .playlist-item {
+            display: flex;
+            align-items: center;
+            padding: 15px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            background: #fdf8f4;
+        }
+
+        .playlist-item.playing {
+            background: #e8d5b7;
+            border-color: #754c21;
+        }
+
+        .song-info {
+            flex: 1;
+            margin-left: 15px;
+        }
+
+        .song-title {
+            font-weight: bold;
+            color: #754c21;
+            margin-bottom: 5px;
+        }
+
+        .song-meta {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-size: 12px;
+            color: #666;
+            margin-bottom: 5px;
+        }
+
+        .song-duration {
+            color: #666;
+            font-size: 14px;
+        }
+
+        .song-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+
+        .delete-song-btn {
+            background: #d9534f;
+            color: #fff;
+            border: none;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .delete-song-btn:hover {
+            background: #c9302c;
+        }
+
+        .play-btn {
+            background: #754c21;
+            color: #fff;
+            border: none;
+            border-radius: 50%;
+            width: 40px;
+            height: 40px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background 0.3s ease;
+            position: relative;
+        }
+
+        .play-btn:hover {
+            background: #a87340;
+        }
+
+        .play-btn::before {
+            content: "";
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 16px;
+            height: 16px;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 24 24'%3E%3Cpath d='M8 5v14l11-7z'/%3E%3C/svg%3E") no-repeat center;
+            background-size: 16px;
+        }
+
+        .play-btn.playing::before {
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' fill='white' viewBox='0 0 24 24'%3E%3Crect x='6' y='4' width='4' height='16'/%3E%3Crect x='14' y='4' width='4' height='16'/%3E%3C/svg%3E") no-repeat center;
+            background-size: 16px;
+        }
+
+        .add-music-btn {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: #754c21;
+            color: #fff;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 8px;
+            font-size: 16px;
+            cursor: pointer;
+            transition: background 0.3s ease;
+        }
+
+        .add-music-btn:hover {
+            background: #a87340;
+        }
+
+        .empty-playlist {
+            text-align: center;
+            padding: 50px 20px;
+            color: #666;
+        }
+
+        .upload-input {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <a href="#" class="back-btn" onclick="navigateBack()">← Back</a>
+    <div class="music-container">
+        <div class="music-header">
+            <h1>Our Music</h1>
+        </div>
+        <input type="file" id="music-upload" accept=".mp3,.mpeg" multiple style="display:none">
+        <button class="add-music-btn" id="add-music-btn">Add Music</button>
+        <ul class="playlist" id="playlist">
+            <!-- Songs will be added here -->
+        </ul>
+    </div>
+
+    <script>
+    // Check login
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      window.location.href = 'login.html';
+    }
+
+    // Add logout button
+    const logoutBtn = document.createElement('a');
+    logoutBtn.href = '#';
+    logoutBtn.className = 'back-btn';
+    logoutBtn.style.top = '20px';
+    logoutBtn.style.right = '20px';
+    logoutBtn.style.left = 'auto';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.onclick = function() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userData');
+      window.location.href = 'login.html';
+    };
+    document.body.appendChild(logoutBtn);
+
+    // Display username
+    const userDisplay = document.createElement('div');
+    userDisplay.style.position = 'fixed';
+    userDisplay.style.top = '20px';
+    userDisplay.style.left = '100px';
+    userDisplay.style.color = '#754c21';
+    userDisplay.style.fontWeight = 'bold';
+    userDisplay.style.fontSize = '18px';
+    userDisplay.textContent = `Welcome, ${currentUser}!`;
+    document.body.appendChild(userDisplay);
+
+    // Navigation function that preserves music state
+    window.navigateBack = function() {
+        // Save current music state before navigating
+        const audio = document.getElementById('audio');
+        if (audio && !audio.paused) {
+            // Music is playing, save state
+            const state = {
+                track: window._GLOBAL_PLAYLIST ? window._GLOBAL_PLAYLIST.findIndex(s => s.src === audio.src) : 0,
+                time: audio.currentTime,
+                playing: true
+            };
+            localStorage.setItem('playerState', JSON.stringify(state));
+        }
+        // Navigate to home
+        window.location.href = 'home.html';
+    };
+    </script>
+    <script src="js/main.js"></script>
+    <script src="js/music.js"></script>
+</body>
+</html>

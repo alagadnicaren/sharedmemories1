@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Timer</title>
+  <style>
+    
+    /* Universal Back Button styles (brown theme) */
+.back-btn {
+  position: fixed;
+  top: 20px;
+  left: 20px;
+  background: #754c21;
+  color: #fff;
+  padding: 12px 18px;
+  border-radius: 8px;
+  text-decoration: none;
+  font-weight: 700;
+  font-size: 17px;
+  box-shadow: 0 6px 14px rgba(0,0,0,0.25);
+  transition: background 0.18s ease, transform 0.12s ease;
+  z-index: 2147483647; /* very high so it stays on top */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+/* hover/tap effect */
+.back-btn:hover {
+  background: #5a3818;
+  transform: translateY(-3px);
+}
+
+/* circular variant: add class "round" */
+.back-btn.round {
+  width: 48px;
+  height: 48px;
+  padding: 0;
+  border-radius: 50%;
+  font-size: 22px;
+}
+
+/* optional smaller mobile sizing */
+@media (max-width: 480px) {
+  .back-btn { top: 14px; left: 12px; padding: 16px 24px; font-size: 20px; }
+  .back-btn.round { width: 52px; height: 52px; font-size: 24px; }
+}
+
+    body {
+      margin: 0;
+      height: 100vh;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      background-color: #d4ba9f;
+      font-family: Arial, sans-serif;
+      color: #754c21;
+    }
+
+    .timer-container {
+      background: #fff;
+      border: 3px solid #754c21;
+      border-radius: 16px;
+      padding: 40px 60px;
+      text-align: center;
+      box-shadow: 0 6px 18px rgba(0, 0, 0, 0.25);
+    }
+
+    h1 {
+      margin-bottom: 25px;
+      font-size: 28px;
+    }
+
+    .time {
+      font-size: 22px;
+      font-weight: bold;
+    }
+
+    .highlight {
+      color: #754c21;
+      font-size: 26px;
+    }
+
+  </style>
+</head>
+<body>
+    <a href="home.html" class="back-btn">⟵ Back</a>
+
+  <div class="timer-container">
+    <h1>Time Since June 28, 2023</h1>
+    <div class="time" id="timer"></div>
+  </div>
+
+  <script>
+    // Check login
+    const currentUser = localStorage.getItem('currentUser');
+    if (!currentUser) {
+      window.location.href = 'login.html';
+    }
+
+    // Add logout button
+    const logoutBtn = document.createElement('a');
+    logoutBtn.href = '#';
+    logoutBtn.className = 'back-btn';
+    logoutBtn.style.top = '20px';
+    logoutBtn.style.right = '20px';
+    logoutBtn.style.left = 'auto';
+    logoutBtn.textContent = 'Logout';
+    logoutBtn.onclick = function() {
+      localStorage.removeItem('currentUser');
+      localStorage.removeItem('userPassword');
+      location.reload();
+    };
+    document.body.appendChild(logoutBtn);
+
+    // Display username
+    const userDisplay = document.createElement('div');
+    userDisplay.style.position = 'fixed';
+    userDisplay.style.top = '20px';
+    userDisplay.style.left = '100px';
+    userDisplay.style.color = '#754c21';
+    userDisplay.style.fontWeight = 'bold';
+    userDisplay.style.fontSize = '18px';
+    userDisplay.textContent = `Welcome, ${currentUser}!`;
+    document.body.appendChild(userDisplay);
+
+    function updateTimer() {
+      const startDate = new Date("2023-06-28");
+      const now = new Date();
+
+      let years = now.getFullYear() - startDate.getFullYear();
+      let months = now.getMonth() - startDate.getMonth();
+      let days = now.getDate() - startDate.getDate();
+
+      if (days < 0) {
+        months--;
+        const prevMonth = new Date(now.getFullYear(), now.getMonth(), 0);
+        days += prevMonth.getDate();
+      }
+
+      if (months < 0) {
+        years--;
+        months += 12;
+      }
+
+      document.getElementById("timer").innerHTML =
+        `<span class="highlight">${years}</span> years, 
+         <span class="highlight">${months}</span> months, 
+         <span class="highlight">${days}</span> days`;
+    }
+
+    updateTimer();
+    setInterval(updateTimer, 1000 * 60 * 60); // update every hour
+  </script>
+
+<!-- 🌍 Global Audio Player -->
+<div id="globalPlayer" style="position:fixed;bottom:0;left:0;right:0;background:#754c21;color:#fff;padding:10px;display:flex;align-items:center;z-index:9999;">
+  <button id="prevBtn">⏮</button>
+  <button id="playPauseBtn">▶️</button>
+  <button id="nextBtn">⏭</button>
+  <span id="nowPlaying" style="margin-left:10px;">No song</span>
+  <input type="range" id="progress" value="0" min="0" step="1" style="flex:1;margin:0 10px;">
+</div>
+
+<audio id="audio"></audio>
+
+<!-- Global music logic -->
+<script src="js/main.js"></script>
+
+<script src="js/router.js"></script>
+
+</body>
+</html>
